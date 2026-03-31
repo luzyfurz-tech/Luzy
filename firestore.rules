@@ -1,0 +1,113 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: {uid}
+// Fields:
+//   - uid: string (required)
+//   - email: string (required, email format)
+//   - role: string (required, admin|moderator|customer)
+//   - coins: number (required, non-negative)
+//   - isProfileComplete: boolean (optional)
+//   - displayName: string (optional)
+//   - age: number (optional)
+//   - city: string (optional)
+//   - gender: string (optional)
+//   - createdAt: timestamp (required)
+//
+// Collection: fantasyProfiles
+// Document ID: {id}
+// Fields:
+//   - username: string (required)
+//   - age: number (required)
+//   - city: string (required)
+//   - gender: string (required)
+//   - backstory: string (optional)
+//   - gallery: list (optional)
+//
+// Collection: chats
+// Document ID: {chatId}
+// Fields:
+//   - customerId: string (required)
+//   - fantasyProfileId: string (required)
+//   - participants: list (required)
+//   - lastMessage: string (optional)
+//   - lastTimestamp: timestamp (optional)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "luzyfurz@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isModerator() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'moderator';
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'coins']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['admin', 'moderator', 'customer'] &&
+             data.coins is number && data.coins >= 0;
+    }
+
+    function isValidFantasyProfile(data) {
+      return data.keys().hasAll(['username', 'age', 'city', 'gender']) &&
+             data.username is string && data.username.size() > 0 && data.username.size() < 50 &&
+             data.age is number && data.age >= 18 &&
+             data.city is string &&
+             data.gender is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin() || isModerator();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'customer' || isAdmin());
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    match /fantasyProfiles/{profileId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && (request.auth.uid in resource.data.participants || isAdmin() || isModerator());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid in resource.data.participants || isAdmin() || isModerator());
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants || isAdmin() || isModerator());
+        allow create: if isAuthenticated();
+      }
+    }
+
+    match /matches/{matchId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+    }
+  }
+}

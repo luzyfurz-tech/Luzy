@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the platform (customer, moderator, or admin).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "age": { "type": "integer" },
+        "city": { "type": "string" },
+        "gender": { "type": "string" },
+        "status": { "type": "string" },
+        "about": { "type": "string" },
+        "interests": { "type": "array", "items": { "type": "string" } },
+        "coins": { "type": "integer" },
+        "role": { "type": "string", "enum": ["admin", "moderator", "customer"] },
+        "isProfileComplete": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "coins"]
+    },
+    "FantasyProfile": {
+      "title": "FantasyProfile",
+      "description": "A fantasy character profile managed by moderators.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "age": { "type": "integer" },
+        "city": { "type": "string" },
+        "gender": { "type": "string" },
+        "status": { "type": "string" },
+        "about": { "type": "string" },
+        "interests": { "type": "array", "items": { "type": "string" } },
+        "gallery": { "type": "array", "items": { "type": "string" } },
+        "backstory": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["username", "age", "city", "gender"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "A conversation between a customer and a fantasy profile.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "fantasyProfileId": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "lastTimestamp": { "type": "string", "format": "date-time" },
+        "unreadCount": { "type": "integer" },
+        "participants": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["customerId", "fantasyProfileId", "participants"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single message in a chat.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["chatId", "senderId", "text", "timestamp"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "A match between a customer and a fantasy profile.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "fantasyProfileId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "fantasyProfileId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "User profiles." },
+    "/fantasyProfiles/{id}": { "schema": "FantasyProfile", "description": "Fantasy characters." },
+    "/chats/{chatId}": { "schema": "Chat", "description": "Chat metadata." },
+    "/chats/{chatId}/messages/{messageId}": { "schema": "Message", "description": "Chat messages." },
+    "/matches/{matchId}": { "schema": "Match", "description": "User-Fantasy matches." }
+  }
+}

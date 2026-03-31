@@ -1,0 +1,5 @@
+{
+  "name": "Spark - Ultimate Dating Ecosystem",
+  "description": "A premium dating platform with fantasy characters and real-time chat moderation.",
+  "requestFramePermissions": ["geolocation"]
+}
